@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar System Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: #020408;
+    color: #e8e8f0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 45% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 22%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 32% 80%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 92% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 18% 65%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 70% 5%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 88%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 50%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 95% 12%, rgba(255,255,255,0.7) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 14px 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+
+  .logo-text span { color: #c8a87e; }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    padding: 24px 0;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .planet-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .planet-btn:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.04); }
+
+  .planet-btn.active {
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+  }
+
+  .planet-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--planet-color, #c8a87e);
+  }
+
+  .planet-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--planet-color, #aaa);
+    box-shadow: 0 0 8px var(--planet-color, #aaa);
+  }
+
+  .planet-dist {
+    font-size: 9px;
+    font-weight: 300;
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+
+  .content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .planet-scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    transition: opacity 0.5s ease;
+  }
+
+  .planet-sphere {
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    flex-shrink: 0;
+  }
+
+  .info-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 32px 48px;
+    background: linear-gradient(to top, rgba(2,4,8,0.95) 60%, transparent);
+    transition: opacity 0.4s ease;
+  }
+
+  .planet-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .planet-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(28px, 4vw, 52px);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .planet-desc {
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.55);
+    max-width: 600px;
+    margin-bottom: 20px;
+  }
+
+  .read-more {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 3px;
+    display: inline-block;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .read-more:hover { color: #fff; border-color: rgba(255,255,255,0.6); }
+
+  .moons-panel {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .moon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    cursor: default;
+  }
+
+  .moon-item:hover { opacity: 1; }
+
+  .moon-ball {
+    border-radius: 50%;
+    background: rgba(200,200,220,0.4);
+    border: 1px solid rgba(200,200,220,0.3);
+  }
+
+  .moon-name {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 20px;
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 3px; }
+
+  .stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.8);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-text">Solar <span>Explorer</span></div>
+  <div class="logo-text" style="opacity:0.3">— In Only CSS</div>
+</header>
+
+<div class="main">
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <div class="content" id="content">
+    <div class="planet-scene" id="scene">
+      <div class="planet-sphere" id="sphere"></div>
+    </div>
+
+    <div class="moons-panel" id="moonsPanel"></div>
+
+    <div class="info-panel" id="infoPanel">
+      <div class="planet-label" id="planetLabel">Planet</div>
+      <div class="planet-name" id="planetName">—</div>
+      <div class="stats-row" id="statsRow"></div>
+      <div class="planet-desc" id="planetDesc"></div>
+      <button class="read-more">Read More →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const planets = [
+  {
+    id: 'pluto', name: 'Pluto', label: 'Dwarf Planet', dist: '39.5 AU',
+    color: '#b5a8d1', size: 60,
+    bg: 'radial-gradient(circle at 38% 35%, #d4c8e8 0%, #9b8bbf 35%, #6b5a8c 70%, #3d2f5c 100%)',
+    desc: 'Once considered the ninth planet, Pluto is now classified as a dwarf planet in the Kuiper Belt. It has a complex surface with mountains of water ice and plains of nitrogen ice.',
+    stats: [{ l: 'Day Length', v: '6.4 Earth Days' }, { l: 'Year Length', v: '248 Earth Years' }, { l: 'Moons', v: '5' }],
+    moons: [{ name: 'Charon', size: 26 }, { name: 'Hydra', size: 14 }, { name: 'Nix', size: 12 }]
+  },
+  {
+    id: 'neptune', name: 'Neptune', label: 'Planet', dist: '30.1 AU',
+    color: '#4b7dde', size: 100,
+    bg: 'radial-gradient(circle at 40% 30%, #7aaeff 0%, #3d6ed4 30%, #1a3fa8 65%, #0d2070 100%)',
+    desc: 'The windiest planet in the solar system, Neptune has supersonic winds reaching 2,100 km/h. It radiates more energy than it receives from the Sun.',
+    stats: [{ l: 'Day Length', v: '16 Hours' }, { l: 'Year Length', v: '165 Earth Years' }, { l: 'Moons', v: '16' }],
+    moons: [{ name: 'Triton', size: 28 }, { name: 'Nereid', size: 16 }, { name: 'Proteus', size: 13 }]
+  },
+  {
+    id: 'uranus', name: 'Uranus', label: 'Planet', dist: '19.8 AU',
+    color: '#5dcfc9', size: 110,
+    bg: 'radial-gradient(circle at 42% 35%, #a0f0ec 0%, #4dcdc7 30%, #2aada8 60%, #145c58 100%)',
+    desc: 'Uranus rotates on its side with an axial tilt of 98°. It has a faint ring system and 27 known moons, many named after Shakespeare\'s characters.',
+    stats: [{ l: 'Day Length', v: '17 Hours' }, { l: 'Year Length', v: '84 Earth Years' }, { l: 'Moons', v: '27' }],
+    moons: [{ name: 'Titania', size: 26 }, { name: 'Oberon', size: 24 }, { name: 'Umbriel', size: 18 }]
+  },
+  {
+    id: 'saturn', name: 'Saturn', label: 'Planet', dist: '9.54 AU',
+    color: '#e8c87a', size: 140,
+    bg: 'radial-gradient(circle at 40% 35%, #f5e0a0 0%, #d4a84b 35%, #b07c20 65%, #704e0a 100%)',
+    desc: 'Saturn\'s iconic rings are made of ice and rock. It is the least dense planet — it could float on water. Saturn has 146 confirmed moons.',
+    stats: [{ l: 'Day Length', v: '10.7 Hours' }, { l: 'Year Length', v: '29.4 Earth Years' }, { l: 'Moons', v: '146' }],
+    moons: [{ name: 'Titan', size: 32 }, { name: 'Rhea', size: 22 }, { name: 'Iapetus', size: 18 }]
+  },
+  {
+    id: 'jupiter', name: 'Jupiter', label: 'Planet', dist: '5.2 AU',
+    color: '#c87a4a', size: 180,
+    bg: 'radial-gradient(circle at 38% 40%, #f0c4a0 0%, #d08050 20%, #a05428 50%, #c89068 65%, #8b3c12 85%, #5c2408 100%)',
+    desc: 'The largest planet in the solar system. Jupiter\'s Great Red Spot is a storm that has raged for over 350 years. Its strong magnetic field creates spectacular auroras.',
+    stats: [{ l: 'Day Length', v: '9.9 Hours' }, { l: 'Year Length', v: '11.9 Earth Years' }, { l: 'Moons', v: '95' }],
+    moons: [{ name: 'Ganymede', size: 32 }, { name: 'Callisto', size: 28 }, { name: 'Io', size: 24 }, { name: 'Europa', size: 20 }]
+  },
+  {
+    id: 'mars', name: 'Mars', label: 'Planet', dist: '1.52 AU',
+    color: '#d95c38', size: 90,
+    bg: 'radial-gradient(circle at 38% 32%, #f0906c 0%, #c0502c 30%, #8c2c10 65%, #501804 100%)',
+    desc: 'The fourth planet from the Sun and the second smallest planet in the solar system. Named after the Roman god of war, often described as the "Red Planet".',
+    stats: [{ l: 'Day Length', v: '24.6 Hours' }, { l: 'Year Length', v: '1.88 Earth Years' }, { l: 'Moons', v: '2' }],
+    moons: [{ name: 'Phobos', size: 22 }, { name: 'Deimos', size: 16 }]
+  },
+  {
+    id: 'earth', name: 'Earth', label: 'Planet', dist: '1 AU',
+    color: '#4a9eda', size: 100,
+    bg: 'radial-gradient(circle at 40% 30%, #a0d8f0 10%, #3a7bbf 30%, #1a4f8a 55%, #0d2d60 75%, #2d6b28 85%, #1a4a14 100%)',
+    desc: 'Our home planet is the only known world harboring life. Earth has one large moon and a magnetosphere that shields the surface from harmful solar radiation.',
+    stats: [{ l: 'Day Length', v: '24 Hours' }, { l: 'Year Length', v: '365.25 Days' }, { l: 'Moons', v: '1' }],
+    moons: [{ name: 'Moon', size: 30 }]
+  },
+  {
+    id: 'venus', name: 'Venus', label: 'Planet', dist: '0.72 AU',
+    color: '#e0b060', size: 95,
+    bg: 'radial-gradient(circle at 42% 35%, #f5d898 0%, #d4902a 35%, #a06018 65%, #6b3808 100%)',
+    desc: 'Venus is the hottest planet with surface temperatures of 465°C. It rotates backwards and a day on Venus is longer than its year.',
+    stats: [{ l: 'Day Length', v: '243 Earth Days' }, { l: 'Year Length', v: '225 Earth Days' }, { l: 'Moons', v: '0' }],
+    moons: []
+  },
+  {
+    id: 'mercury', name: 'Mercury', label: 'Planet', dist: '0.39 AU',
+    color: '#a08878', size: 55,
+    bg: 'radial-gradient(circle at 38% 35%, #d0b8a8 0%, #907060 35%, #604840 65%, #382820 100%)',
+    desc: 'The smallest and fastest planet. Mercury has extreme temperature swings from 430°C in the day to -180°C at night, with no atmosphere to retain heat.',
+    stats: [{ l: 'Day Length', v: '58.6 Earth Days' }, { l: 'Year Length', v: '88 Earth Days' }, { l: 'Moons', v: '0' }],
+    moons: []
+  }
+];
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+const style = document.createElement('style');
+style.textContent = `@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }`;
+document.head.appendChild(style);
+
+function render(idx) {
+  const p = planets[idx];
+
+  document.getElementById('sidebar').innerHTML = planets.map((pl, i) => `
+    <button class="planet-btn ${i === idx ? 'active' : ''}" style="--planet-color:${pl.color}" onclick="render(${i})">
+      <div class="planet-dot" style="--planet-color:${pl.color};width:${Math.max(10, Math.min(22, pl.size/8))}px;height:${Math.max(10, Math.min(22, pl.size/8))}px"></div>
+      <div>
+        <div>${pl.name}</div>
+        <div class="planet-dist">${pl.dist}</div>
+      </div>
+    </button>
+  `).join('');
+
+  const sphere = document.getElementById('sphere');
+  sphere.style.cssText = `
+    width: ${p.size * 2.5}px;
+    height: ${p.size * 2.5}px;
+    background: ${p.bg};
+    border-radius: 50%;
+    box-shadow: inset -${p.size/2}px -${p.size/3}px ${p.size}px rgba(0,0,0,0.7), 0 0 ${p.size}px rgba(${hexToRgb(p.color)},0.15);
+    margin-bottom: ${p.size * 0.4}px;
+    animation: float 6s ease-in-out infinite;
+    flex-shrink: 0;
+  `;
+
+  document.getElementById('planetLabel').textContent = p.label.toUpperCase();
+  document.getElementById('planetName').textContent = p.name;
+  document.getElementById('planetDesc').textContent = p.desc;
+
+  document.getElementById('statsRow').innerHTML = p.stats.map(s => `
+    <div class="stat">
+      <div class="stat-label">${s.l}</div>
+      <div class="stat-value">${s.v}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('moonsPanel').innerHTML = p.moons.map(m => `
+    <div class="moon-item">
+      <div class="moon-ball" style="width:${m.size}px;height:${m.size}px"></div>
+      <div class="moon-name">${m.name}</div>
+    </div>
+  `).join('');
+}
+
+render(5);
+</script>
+</body>
+</html>
